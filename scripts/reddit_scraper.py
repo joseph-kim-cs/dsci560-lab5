@@ -7,12 +7,14 @@ import praw
 from praw.models import MoreComments
 from dotenv import load_dotenv
 
+
 load_dotenv()
 
 # client credentials are loaded from environment variables for security and flexibility
 client_id = os.getenv("REDDIT_CLIENT_ID")
 client_secret = os.getenv("REDDIT_CLIENT_SECRET")
 user_agent = os.getenv("REDDIT_USER_AGENT")
+
 
 def fetch_posts(
     reddit: praw.Reddit, subreddit_name: str, total_limit: int, sort: str = "new",
@@ -26,7 +28,7 @@ def fetch_posts(
     collected: list[dict] = []
     seen_ids: set[str] = set()
 
-    # Cursor: fetch posts created before this timestamp (UTC seconds)
+    # cursor: fetch posts created before this timestamp
     before = None
     empty_pages = 0
 
@@ -34,14 +36,10 @@ def fetch_posts(
         remaining = total_limit - len(collected)
         limit = min(batch_size, remaining)
 
-        # PRAW itself doesn't expose a "before" param on the high-level listing nicely,
-        # but you can use .new(params={...}) to pass API params.
         if sort.lower() == "new":
             params = {"limit": limit}
             if before is not None:
                 params["before"] = before  # fullname of thing in some endpoints; not always supported
-                # More reliable: use CloudSearch syntax via subreddit.search for time window.
-                # We fallback to search-based paging below if needed.
             listing = sr.new(limit=limit)
         elif sort.lower() == "hot":
             listing = sr.hot(limit=limit)
@@ -53,7 +51,7 @@ def fetch_posts(
         page_items = []
         try:
             for submission in listing:
-                # Basic guard: if we already have it, skip
+                # if we already have it, skip
                 if submission.id in seen_ids:
                     continue
 
@@ -90,7 +88,7 @@ def fetch_posts(
         if not page_items:
             empty_pages += 1
             if empty_pages >= max_empty_pages:
-                # We likely hit practical listing depth limit (~1000)
+                # We probably hit the practical listing depth limit (~1000)
                 break
         else:
             empty_pages = 0
