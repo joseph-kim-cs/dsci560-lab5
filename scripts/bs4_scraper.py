@@ -110,6 +110,39 @@ def get_next_page_url(soup: BeautifulSoup) -> str | None:
     a = next_button.find("a")
     return a.get("href") if a else None
 
+# this function is for upserting into the mysql database
+# main() here returns the csv file
+def scrape_posts_bs4(subreddit: str, limit: int = 200, max_pages: int = 10) -> list[dict]:
+    subreddit = subreddit.strip().lstrip("r/").lstrip("/")
+    url = f"https://old.reddit.com/r/{subreddit}/"
+
+    session = requests.Session()
+    session.headers.update({"User-Agent": USER_AGENT})
+
+    collected: list[dict] = []
+    seen: set[str] = set()
+    pages = 0
+
+    while len(collected) < limit and pages < max_pages:
+        pages += 1
+        soup = fetch_page(url, session)
+        page_posts = extract_posts(soup, subreddit)
+
+        for p in page_posts:
+            key = p["post_id"] or p["permalink"] or (p["title"] + p["author"])
+            if key in seen:
+                continue
+            seen.add(key)
+            collected.append(p)
+            if len(collected) >= limit:
+                break
+
+        next_url = get_next_page_url(soup)
+        if not next_url:
+            break
+        url = next_url
+
+    return collected[:limit]
 
 def write_csv(path: str, rows: list[dict]) -> None:
     fieldnames = [

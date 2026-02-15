@@ -52,6 +52,57 @@ def fetch_comments_json(permalink: str) -> dict:
 
     return r.json()
 
+def fetch_comments_flat(permalink: str, sleep_s: float = 1.5) -> list[dict]:
+    """
+    returns a flat list of comment dicts with ids and bodies
+    skips kind more placeholders for simplicity
+    """
+    headers = {"User-Agent": USER_AGENT}
+
+    if permalink.startswith("http"):
+        url = permalink.rstrip("/") + ".json"
+    else:
+        url = f"https://www.reddit.com{permalink.rstrip('/')}.json"
+
+    r = requests.get(url, headers=headers, params={"limit": 500, "sort": "top"}, timeout=30)
+    r.raise_for_status()
+    time.sleep(sleep_s)
+
+    data = r.json()
+    if not isinstance(data, list) or len(data) < 2:
+        return []
+
+    post_listing = data[0]["data"]["children"]
+    if not post_listing:
+        return []
+    post_fullname = post_listing[0]["data"]["name"]  # t3_xxxxx
+
+    out = []
+
+    def walk(children):
+        for child in children:
+            kind = child.get("kind")
+            cdata = child.get("data", {})
+            if kind != "t1":
+                continue
+
+            out.append({
+                "comment_id": cdata.get("name"),        # t1_xxxxx
+                "post_id": post_fullname,               # t3_xxxxx
+                "parent_id": cdata.get("parent_id"),    # t1_... or t3_...
+                "author": cdata.get("author"),
+                "body": cdata.get("body"),
+                "score": cdata.get("score"),
+                "created_utc": cdata.get("created_utc"),
+            })
+
+            replies = cdata.get("replies")
+            if isinstance(replies, dict):
+                walk(replies.get("data", {}).get("children", []))
+
+    walk(data[1]["data"]["children"])
+    return out
+
 
 def main():
     subreddit = "tech" # quick example call

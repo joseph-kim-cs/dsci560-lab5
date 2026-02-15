@@ -1,6 +1,6 @@
 services:
   mysql:
-    image: mysql:8.4
+    image: mysql:8.0
     container_name: reddit_mysql
     restart: unless-stopped
     environment:
@@ -9,7 +9,7 @@ services:
       MYSQL_USER: appuser
       MYSQL_PASSWORD: apppass
     ports:
-      - "3306:3306"
+      - "6767:3306"
     volumes:
       - mysql_data:/var/lib/mysql
 
