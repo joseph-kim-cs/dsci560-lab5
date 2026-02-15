@@ -1,4 +1,5 @@
-REDDIT_CLIENT_ID = ""
-REDDIT_CLIENT_SECRET = ""
-# your reddit username
-REDDIT_USER_AGENT = ""
+MYSQL_HOST=127.0.0.1
+MYSQL_PORT=3306
+MYSQL_DB=reddit_app
+MYSQL_USER=appuser
+MYSQL_PASSWORD=apppass

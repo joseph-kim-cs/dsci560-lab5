@@ -45,7 +45,7 @@ def fetch_comments_json(permalink: str) -> dict:
         url = permalink + ".json"
 
     print("fetching json from:", url)
-
+    
     r = requests.get(url, headers=headers, timeout=30)
     r.raise_for_status()
     time.sleep(1.5)
